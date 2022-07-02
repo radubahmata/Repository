@@ -6,6 +6,11 @@ interface SquareProps{
   value:string;
 }
 
+interface BoardProps{
+  squares:Array<string>;
+  onClick:(i:number)=>void;
+}
+
 function Square(props:SquareProps){
     return (
       <button 
@@ -18,55 +23,20 @@ function Square(props:SquareProps){
     
   }
   
-  const Board = ()=> {
-    
-    const [squares, setSquares] = useState(Array(9).fill(null));
-    const [xIsNext, setXIsNext] = useState(true);
-    /*constructor(props){
-        super(props);
-        this.state={
-            squares: Array(9).fill(null),
-        };
-    }
-    */
-    
-    const handleClick = (i:number)=>{
-      
-      const squares_copy = squares.slice();
-      if(calculateWinner(squares) || squares[i]){
-        return;
-      }
-      
-      squares_copy[i]= xIsNext? 'X':'O';
-      setSquares(squares_copy);
-      setXIsNext(!xIsNext);
-    }
+  const Board = (props:BoardProps)=> {
 
     const renderSquare = (i:number) =>  {
-      //var squareState=squares[i];
       return( 
         <Square 
-          value={squares[i]}
-          onClick={()=>handleClick(i)}
+          value={props.squares[i]}
+          onClick={()=>props.onClick(i)}
         />
-      )
-      
+      )      
     }
-  
 
-    //const status = 'Next player: ' + (xIsNext? 'X':'O');
-
-    const winner = calculateWinner(squares);
-    let status;
-    if(winner){
-      status='Winner: '+winner
-    }else {
-      status='Next player: ' + (xIsNext? 'X':'O');
-    }
-  
       return (
         <div>
-          <div className="status">{status}</div>
+          
           <div className="board-row">
             {renderSquare(0)}
             {renderSquare(1)}
@@ -88,17 +58,51 @@ function Square(props:SquareProps){
   
   
   export const Game =()=> {
+    let squares:Array<string>;
+    const [history, setHistory] = useState([{squares:Array(9).fill(null)}]);
+    console.log(history);
+    const [xIsNext,setXIsNext] = useState(true);
+
+    const handleClick = (i:number)=>{
+      setHistory(history);
+      const current = history[history.length-1];
+      const squares_copy=current.squares.slice();
+      setHistory(history.concat([{squares: squares_copy}]));
+      
+      if(calculateWinner(squares_copy) || squares_copy[i]){
+        return;
+      }
+      
+      squares_copy[i]= xIsNext? 'X':'O';
+      setHistory(history.concat([{squares:squares_copy}]));
+      setXIsNext(!xIsNext);
+      
+    }
+
+    const current = history[history.length-1];
+    const winner = calculateWinner(current.squares);
+    let status;
+    if (winner) {
+      status = 'Winner: ' + winner;
+    } else {
+      status = 'Next player: ' + (xIsNext ? 'X' : 'O');
+    }
       return (
         <div className="game">
           <div className="game-board">
-            <Board />
+            <Board 
+              squares={current.squares}
+              onClick={(i)=>handleClick(i)}
+            />
           </div>
           <div className="game-info">
-            <div>{/* status */}</div>
+            <div>{status}</div>
             <ol>{/* TODO */}</ol>
           </div>
         </div>
+        
       );
+      
   }
 
   function calculateWinner(squares:Array<String>){
@@ -112,8 +116,8 @@ function Square(props:SquareProps){
       [0,4,8],
       [2,4,6],
     ];
-    for(let i=0; i<lines.length;i++){
-      const [a,b,c] = lines[i];
+    for(let j=0; j<lines.length;j++){
+      const [a,b,c] = lines[j];
       if(squares[a] && squares[a]===squares[b] && squares[a]===squares[c]){
         return squares[a];
       }
